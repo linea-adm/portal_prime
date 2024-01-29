@@ -1,0 +1,39 @@
+version: '3'  # Versão do formato do Docker Compose. 
+
+services:  # Define os serviços que compõem o projeto.
+
+  prime:  # Define o serviço prime.
+    build:  # Opções de build do serviço prime.
+      context: .  # Define o diretório que será usado como o contexto de construção do Docker. Nesse caso, é o diretório raiz do projeto.
+      dockerfile: Dockerfile  # O nome do Dockerfile que será usado para construir a imagem do Docker. Nesse caso, é o Dockerfile.frontendssl, que deve estar na raiz do projeto.
+    container_name: prime
+    volumes:  # Define o mapeamento de volumes.
+      - ./src/portal_prime:/var/www/html:delegated  # Mapeia o código do prime da máquina host para o contêiner do Docker.      
+
+    ports:  # Define o mapeamento de portas.
+      - 8082:80  # Mapeia a porta 8080 da máquina host para a porta 80 do contêiner do Docker.
+      - 3000:3000  # Porta usada pelo servidor de desenvolvimento do Vite
+      - 3001:3001  # Porta opcional para ferramentas de inspeção
+    command: ["/bin/bash", "/run.sh"]  # Define o comando que será executado quando o contêiner do Docker for iniciado.
+    networks:  # Define as redes a que o serviço pertence.
+      - app-network  # O serviço frontendssl pertence à rede app-network.
+  
+  mysql:
+    image: mysql:8.1
+    ports:
+      - "3309:3306"
+    container_name: mysql_prime
+    networks:  # Define as redes a que o serviço pertence.
+      - app-network  # O serviço prime pertence à rede app-network.
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'Linea2023'
+      MYSQL_DATABASE: portal_prime
+      MYSQL_LOCAL_INFILE: '1' 
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    name: app-network  # Manterá o nome da rede como "app-network"
