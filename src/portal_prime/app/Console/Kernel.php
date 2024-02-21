@@ -12,7 +12,6 @@ class Kernel extends ConsoleKernel
      */
 
      protected $commands = [
-        // Adicione o comando SyncClientes aqui
         \App\Console\Commands\SyncClientes::class,
     ];
 

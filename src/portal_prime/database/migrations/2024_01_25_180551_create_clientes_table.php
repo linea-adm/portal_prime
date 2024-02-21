@@ -12,6 +12,7 @@ class CreateClientesTable extends Migration
             $table->string('codigo_loja')->unique(); // Ex: A1_COD + A1_LOJA
             $table->string('codigo');
             $table->string('loja')->nullable();
+            $table->string('email')->nullable();
             $table->string('pessoa')->nullable();
             $table->string('razao')->nullable();
             $table->string('fantasia')->nullable();

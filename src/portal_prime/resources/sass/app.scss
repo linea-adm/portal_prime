@@ -4,5 +4,11 @@
 // Variables
 @import 'variables';
 
-// Bootstrap
-@import 'bootstrap/scss/bootstrap';
+
+// Variables
+// Se você tinha variáveis personalizadas no arquivo 'variables', ajuste conforme necessário
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

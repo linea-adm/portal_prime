@@ -22,7 +22,9 @@ class SyncClientes extends Command
             ],
         ]);
 
+
         $clientes = json_decode($response->getBody(), true);
+        // $clientes = json_decode($json, true);
 
         foreach ($clientes as $clienteData) {
             // Construa a combinação de campos que garante a integridade do cadastro do cliente
@@ -33,12 +35,30 @@ class SyncClientes extends Command
                 'grupo_cliente' => $clienteData['Grupo Cliente'] ?? null,
             ];
 
+
             // Verifica se as chaves necessárias existem no array
             if (isset($identificadorProtheus['codigo'], $identificadorProtheus['loja'], $identificadorProtheus['cnpj'], $identificadorProtheus['grupo_cliente'])) {
                 $dtCadastro = isset($clienteData['DT Cadastro']) ? Carbon::createFromFormat('d/m/Y', $clienteData['DT Cadastro'])->format('Y-m-d') : null;
 
+
+                // Tratamento do campo de e-mails
+                $emails = explode(';', $clienteData['Email'] ?? '');
+                $emailsValidos = [];
+
+                foreach ($emails as $email) {
+                    $email = trim($email); // Remove espaços em branco à direita e à esquerda
+
+                    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $emailsValidos[] =strtolower($email);
+                    }
+                }
+
+                $clienteData['Email'] = implode(';', $emailsValidos);
+
+
                 $cliente = Cliente::updateOrCreate($identificadorProtheus, [
                     'pessoa' => $clienteData['Pessoa'] ?? null,
+                    'email' => $clienteData['Email'] ?? null,
                     'razao' => $clienteData['Razao'] ?? null,
                     'codigo' => $clienteData['Codigo'],
                     'loja' => $clienteData['Loja'],

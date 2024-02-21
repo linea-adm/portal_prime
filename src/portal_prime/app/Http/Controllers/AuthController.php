@@ -9,6 +9,28 @@ use Laravel\Sanctum\Sanctum;
 
 class AuthController extends Controller
 {
+    public function loginProtheus(Request $request)
+    {
+        $request->validate([
+            'email' => 'required',
+            'password' => 'required',
+        ]);
+
+        $credentials = [
+            'email' => $request->input('email'),
+            'password' => $request->input('password'),
+        ];
+
+        if (Auth::attempt($credentials)) {
+            $token = Auth::user()->createToken('token-name')->plainTextToken;
+
+            return response()->json(['token' => $token]);
+        }
+
+        throw ValidationException::withMessages([
+            'codigo' => ['Credenciais inválidas'],
+        ]);
+    }
     public function login(Request $request)
     {
         $request->validate([

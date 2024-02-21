@@ -4,18 +4,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 
-class Cliente extends Model
+class Cliente  extends Authenticatable
 {
     use HasFactory;
 
     protected $table = 'clientes'; // Nome da tabela no banco de dados
 
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'codigo_loja',
         'codigo',
         'loja',
+        'email',
         'pessoa',
         'razao',
         'fantasia',
@@ -44,6 +48,4 @@ class Cliente extends Model
         'desc_grupo',
         'dt_cadastro',
     ];
-
-    // Se necessário, adicione relacionamentos, mutators, accessors, etc.
 }

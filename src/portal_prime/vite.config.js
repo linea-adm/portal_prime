@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
+import VitePluginWindicss from 'vite-plugin-windicss';
 
 export default defineConfig({
     server: {
@@ -26,6 +27,7 @@ export default defineConfig({
                 },
             },
         }),
+    VitePluginWindicss(),
     ],
     resolve: {
         alias: {

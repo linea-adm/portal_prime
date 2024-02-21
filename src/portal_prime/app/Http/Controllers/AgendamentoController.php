@@ -2,75 +2,90 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Helpers\ApiHelper;
 use App\Models\Cliente;
 
+use App\Models\PasswordReset;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 
 class AgendamentoController extends Controller
 {
-    public function gerarLink(Request $request)
+    public function index(Request $request)
     {
-        $user = auth()->user();
+        try {
+            // Obter o token JWT da query string
+            $token = $request->query('token');
 
-        $data = $request->validate([
-            'codigo' => 'required',
-            'loja' => 'required',
-            'cnpj' => 'required',
-        ]);
+            // // Validar se o token existe no banco
+             $passwordReset = PasswordReset::where('token', $token)->first();
 
-        // Lógica para gerar o link com base nas informações do cliente
-        $link = $this->gerarLinkAgendamento($data);
+            if (!$passwordReset) {
+                // Token inválido, erro de autenticação
+                return response()->json(['error' => 'Token inválido'], 401);
+            }
 
-        // Assinar a URL antes de retornar
-        $linkAssinado = URL::temporarySignedRoute('agendamento', now()->addMinutes(30), [
-            'codigo' => $data['codigo'],
-            'loja' => $data['loja'],
-            'cnpj' => $data['cnpj'],
-        ]);
+            // Decodificar o token JWT
+            $decodedToken = JWT::decode($token, new Key(env('JWT_KEY'), 'HS256'));
+            // $cliente = Cliente::where('id',$decodedToken->sub)->first();
+            // Fazer login do cliente (sessão) com dados decodificados do JWT
+            // Auth::guard('cliente')->login($cliente);
+            Auth::guard('cliente')->loginUsingId(trim($decodedToken->sub));
+            // $usuario=Auth::guard('cliente')->user();
+            // Recuperar dados do token
+            $cnpj = $decodedToken->cnpj;
+            $email = $decodedToken->email;
+            $codigoCliente = $decodedToken->codigo;
+            $loja = $decodedToken->loja;
 
-        return response()->json(['link' => $linkAssinado]);
-    }
+            // Excluir o registro do token do banco
+            // $passwordReset = PasswordReset::where('email', $passwordReset->email)
+            // ->where('token', $passwordReset->token)
+            // ->delete();
 
-    private function gerarLinkAgendamento($data)
-    {
-        // Lógica para gerar o link com base nas informações do cliente
-        // Exemplo: Concatenar informações do cliente para criar um link único
+            // Redirecionar para a página de agendamento com os dados do token
+            return redirect('/programar-entregas')->with([
+                'cnpj' => $cnpj,
+                'email' => $email,
+                'codigoCliente' => $codigoCliente,
+                'loja' => $loja,
+            ]);
 
-        $urlBase = env('APP_URL', 'https://seu-site.com');
-        $link = $urlBase . '/agendamento';
+        } catch (\Exception $e) {
 
-        return $link;
-    }
-    public function processarLink(Request $request)
-    {
-        // Verifique se a assinatura é válida e se os parâmetros são confiáveis
-        if (!$request->hasValidSignature()) {
-            abort(403, 'Assinatura inválida na URL.');
+            return response()->json(['error' => 'Erro no processo de login'], 500);
         }
-
-        // Obtenha os parâmetros da URL assinada
-        $codigo = $request->query('codigo');
-        $loja = $request->query('loja');
-        $cnpj = $request->query('cnpj');
-
-        // Lógica para processar os parâmetros
-        // ...
-
-        return view('agendamento');
     }
-    public function testarLinkAssinado()
+
+    public function programarEntregas()
     {
-        $data = [
-            'codigo' => '123',
-            'loja' => '02',
-            'cnpj' => '12345678901234',
+        // Recuperar dados passados do método index
+        $cnpj = session('cnpj');
+        $email = session('email');
+        $codigoCliente = session('codigoCliente');
+        $loja = session('loja');
+
+        // $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', $codigoCliente)->where('loja', $loja)->first();
+        $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', '000003')->where('loja', '03')->first();
+        if(!$cliente) $cliente=Cliente::where('id',1)->first();
+        // Dados do cliente
+        $dadosCliente = [
+            'nomeFantasia' => $cliente->fantasia,
+            'municipioEstado' => $cliente->municipio . '-' . $cliente->uf,
+            'cnpj' => $cliente->cnpj,
+            'codigoCliente' => $codigoCliente,
+            'loja' => $loja,
+            'email' => $email, // Usando o e-mail da sessão, pois não está claro de onde ele vem
         ];
 
-        // Gere um link assinado para os parâmetros
-        $linkAssinado = URL::temporarySignedRoute('agendamento', now()->addMinutes(30), $data);
+        $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas( '000003', '04');
+        // $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja);
 
-        return response()->json(['link' => $linkAssinado]);
+        // dd($dadosNotasFiscais);
+        return view('agendamento', compact('dadosCliente','dadosNotasFiscais'));
     }
 
 }

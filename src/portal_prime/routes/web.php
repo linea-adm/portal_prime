@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\AgendamentoController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\JwtClienteController;
+use App\Http\Controllers\NotaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,46 +17,29 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('agendamento');
 });
 
 Route::get('/phpinfo', function () {
     return phpinfo();
 });
 
-
-Route::get('/phpinfow', function () {
-    return phpinfo();
-});
-
-
-
-// Route::get('/teste', function () {
-//     // Conectar ao banco de dados Oracle
-//     # $pdo = new PDO('oci:dbname=//172.20.1.123:1521/orcl', 'USR_X3AFMZH', 'X3AFMZHTESTE');
-// $conn = oci_connect('USR_X3AFMZH', 'X3AFMZHTESTE', '//172.20.1.123:1521/ORCL');
-
-// if (!$conn) {
-//     $e = oci_error();
-//     trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-// }
-
-// // Realizar uma consulta
-// $stid = oci_parse($conn, 'SELECT * FROM X3AFMZH.SZT010');
-// oci_execute($stid);
-
-// // Exibir resultados
-// while (($row = oci_fetch_assoc($stid)) != false) {
-//     print_r($row);
-// }
-
-// // Fechar a conexão
-// oci_free_statement($stid);
-// oci_close($conn);
-
-//     return phpinfo();
-// });
-
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// routes\web.php
+
+
+Route::post('/cliente-jwt', [JwtClienteController::class, 'generateToken']);
+
+
+Route::get('/agendamento', [AgendamentoController::class, 'index'])->middleware('verifyTokenUsage');
+
+Route::middleware(['cliente'])->group(function () {
+
+    Route::get('/programar-entregas', [AgendamentoController::class,'programarEntregas'])->name('programarEntregas');
+
+});
+
+
+Route::get('/notas-nao-agendadas', [NotaController::class, 'buscarNotasNaoAgendadas']);

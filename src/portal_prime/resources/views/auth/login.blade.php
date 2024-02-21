@@ -1,3 +1,4 @@
+{{-- <?php xdebug_break(); ?> --}}
 @extends('layouts.app')
 
 @section('content')
