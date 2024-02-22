@@ -17,6 +17,7 @@ class SendLoginLinkController extends Controller
         $email = $request->input('email');
         $codCliente = $request->input('cod_cliente');
         $codLoja = $request->input('cod_loja');
+        $notas = $request->input('notas'); // Lista de notas recebidas do ERP
 
         // busca cliente na base
         $cliente = Cliente::where('codigo', $codCliente)
@@ -28,7 +29,9 @@ class SendLoginLinkController extends Controller
         $token = $this->gerarToken($cliente, $email);
 
         // montar URL de redirecionamento
-        $url = "/agendamento?token=$token";
+        // $url = "/agendamento?token=$token";
+        $url = "/agendamento?token=$token&notas=" . urlencode(json_encode($notas));
+
 
         // retornar dados de resposta
         return [
