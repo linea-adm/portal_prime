@@ -12,9 +12,10 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
 
     <!-- Styles -->
+    {{-- <link rel="stylesheet" href="{{ asset('css/app.css') }}"> --}}
 
-    @vite('resources/css/app.css')
-    @vite('resources/js/app.js')
+    @vite(['resources/sass/app.scss'])
+    @vite(['resources/js/app.js'])
 
     <style>
         .header-bg {
@@ -171,14 +172,13 @@
 
 
         <div class="flex items-center justify-between">
-            <img src="{{ asset('/images/logo_linea.png') }}" alt="Logo" class="h-12">
+            <img src="{{ asset('/images/logo_linea.png') }}" alt="Logo" class="h-6" height="40">
             <h1 class="text-2xl font-bold header-text">Programação de Entregas - Linea Alimentos</h1>
             <div></div>
         </div>
     </div>
 
     <div id="app">
-        <?php xdebug_break(); ?>
 
         <!-- Preload -->
         <div id="preloader" class="flex items-center justify-center h-screen">

@@ -46,12 +46,16 @@ class AgendamentoController extends Controller
             // ->where('token', $passwordReset->token)
             // ->delete();
 
+            // Decodificar o parâmetro 'notas' da URL
+            $notasParam = $request->query('notas');
+            $notasFiltradasIds = json_decode($notasParam, true);
             // Redirecionar para a página de agendamento com os dados do token
             return redirect('/programar-entregas')->with([
                 'cnpj' => $cnpj,
                 'email' => $email,
                 'codigoCliente' => $codigoCliente,
                 'loja' => $loja,
+                'notas' =>$notasFiltradasIds
             ]);
 
         } catch (\Exception $e) {
@@ -68,8 +72,8 @@ class AgendamentoController extends Controller
         $codigoCliente = session('codigoCliente');
         $loja = session('loja');
 
-        // $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', $codigoCliente)->where('loja', $loja)->first();
-        $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', '000003')->where('loja', '03')->first();
+        $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', $codigoCliente)->where('loja', $loja)->first();
+        // $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', '000003')->where('loja', '03')->first();
         if(!$cliente) $cliente=Cliente::where('id',1)->first();
         // Dados do cliente
         $dadosCliente = [
@@ -80,9 +84,16 @@ class AgendamentoController extends Controller
             'loja' => $loja,
             'email' => $email, // Usando o e-mail da sessão, pois não está claro de onde ele vem
         ];
+        
+      
+        $notasFiltradasIds  = session('notas');
 
-        $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas( '000003', '04');
+        // $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas( '000003', '04');
         // $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja);
+        if(!empty($notasFiltradasIds))
+            $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja, $notasFiltradasIds);
+        else
+            $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja);
 
         // dd($dadosNotasFiscais);
         return view('agendamento', compact('dadosCliente','dadosNotasFiscais'));

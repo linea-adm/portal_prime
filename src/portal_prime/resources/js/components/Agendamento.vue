@@ -26,7 +26,7 @@
                         <button @click="enviarEmail" class="bg-blue-500 text-white px-4 py-2 rounded-md font-bold">
                             <i class="fas fa-envelope"></i>
                             Enviar E-mail</button>
-                    </div>
+                    </div> 
                 </div>
             </div>
         </div>
@@ -81,7 +81,15 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <input type="checkbox" v-model="nota.agendar" class="form-checkbox h-5 w-5 text-blue-500">
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">{{ nota.f2_doc }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        
+                    <div v-if="nota.loading" class="flex items-center justify-center">
+                        <i class="fas fa-spinner fa-spin"></i> {{ nota.f2_doc }}
+                    </div>
+                    <div v-else>
+                        {{ nota.f2_doc }}
+                    </div>
+                        </td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ formatarData(nota.c5_emissao) }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ nota.c5_num }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ nota.f2_transp }}</td>
@@ -100,7 +108,7 @@
                                 v-if="nota.mostrarCamposDataHora">
                             <input type="time" v-model="horaAgendamento" class="border rounded-md p-1"
                                 v-if="nota.mostrarCamposDataHora">
-                            <button @click="confirmarAgendamento(nota)"
+                            <button @click="abrirModalConfirmacao(nota)"
                                 class="px-3 py-1 bg-green-500 text-white rounded-md ml-2 " v-if="nota.mostrarCamposDataHora"
                                 alt="Confirmar Agendamento" title="Confirmar Agendamento">
 
@@ -121,6 +129,16 @@
             </tbody>
         </table>
 
+        <div v-if="mostrarModalConfirmacao" class="fixed inset-0 flex items-center justify-center modal-bg">
+            <div class="modal-content bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold mb-4">Confirmar Agendamento</h2>
+                <p>Confirma o agendamento para a data: {{ dataAgendamento }} e hora: {{ horaAgendamento }}?</p>
+                <div class="flex justify-end mt-4">
+                    <button @click="confirmarAgendamento" class="px-4 py-2 bg-green-500 text-white rounded-md mr-2">Confirmar</button>
+                    <button @click="fecharModalConfirmacao" class="px-4 py-2 bg-red-500 text-white rounded-md">Cancelar</button>
+                </div>
+            </div>
+        </div>
 
         <!-- <div class="pagination">
             <button @click="paginaAtual--" :disabled="paginaAtual === 1"
@@ -191,6 +209,8 @@ export default {
 
     data() {
         return {
+            username: 'magno.borges',
+            password: 'Eic@ti0100',
             selecionarTodas: false,
             notasFiscais: [],
             detalhesVisiveis: false,
@@ -205,6 +225,7 @@ export default {
             progressPercent: 0,
             logoLinea: this.logo + '/logo_linea.png',
             termoPesquisa: '',
+            mostrarModalConfirmacao: false,
         };
     },
     mounted() {
@@ -219,16 +240,6 @@ export default {
         });
     },
     computed: {
-        // notasFiltradas() {
-        //     // Filtra as notas fiscais com base no termo de pesquisa
-        //     return this.notasFiscais.filter(nota => {
-        //         // Converte o termo de pesquisa e o número da nota para strings
-        //         const termo = this.termoPesquisa.toLowerCase();
-        //         const numeroNota = nota.f2_doc.toString().toLowerCase();
-        //         // Verifica se o número da nota contém o termo de pesquisa
-        //         return numeroNota.includes(termo);
-        //     });
-        // },
         notasFiltradas() {
             const termo = this.termoPesquisa.toLowerCase().trim();
             return this.notasFiscais.filter(nota => {
@@ -263,13 +274,64 @@ export default {
         },
     },
     methods: {
+        abrirModalConfirmacao() {
+            this.mostrarModalConfirmacao = true;
+        },
+        fecharModalConfirmacao() {
+            this.mostrarModalConfirmacao = false;
+        },
+        // Método para agendar entregas
+        async confirmarAgendamento() {
+            const confirmacao = `Confirma o agendamento para a data: ${this.dataAgendamento} e hora: ${this.horaAgendamento}?`;
+            this.abrirModalConfirmacao();
+
+            // Itera sobre notas fiscais selecionadas para agendamento
+            const notasParaAgendar = this.notasFiscais.filter(nota => nota.agendar);
+            if(notasParaAgendar.length === 0){
+                alert('Nenhuma nota foi selecionada para agendamento.');
+                return;
+            }
+            // Prepara os dados para agendamento para cada nota selecionada
+            notasParaAgendar.forEach(async nota => {
+            const agendamentoDados = {
+                filial: nota.f2_filial, // Assumindo que cada nota tem uma filial associada
+                dt_agendamento: this.dataAgendamento.replaceAll('-', ''), // Converte a data para o formato 'AAAAMMDD'
+                hr_agendamento: this.horaAgendamento.replace(':', ''), // Converte a hora para o formato 'HHMM'
+                tipo: '102', // Tipo de agendamento
+                cliente: nota.a1_cod, // Assumindo que cada nota tem um cliente associado
+                chave_nfe: nota.f2_chvnfe // A chave da nota fiscal
+            };
+
+            // Realiza a requisição de agendamento
+            try {
+
+                const authHeader = 'Basic ' + btoa(this.username + ':' + this.password);
+                const headers = {
+                    'Authorization': authHeader
+                };
+                const response = await axios.post('http://www.erplineaalimentos.com.br:8191/rest/AgendarEntrega/agendamento', agendamentoDados, { headers });
+                this.$set(nota, 'loading', false); // Desativa o preloader
+                this.$set(nota, 'agendamentoConfirmado', true); // Marca o agendamento como confirmado
+            
+                console.log("Agendamento realizado com sucesso para a nota:", nota.f2_doc);
+                // alert(`Agendamento realizado com sucesso para a nota: ${nota.f2_doc}`);
+            } catch (error) {
+                this.$set(nota, 'loading', false); // Desativa o preloader em caso de erro
+                console.error("Erro ao agendar a entrega para a nota:", nota.f2_doc, error);
+                // alert(`Erro ao agendar a entrega para a nota: ${nota.f2_doc}`);
+            }
+            });
+
+            // Notifica o usuário após tentar agendar todas as notas selecionadas
+            console.log("Tentativa de agendamento concluída. Verifique o console para mais informações.");
+        },
         async verDetalhes(nota) {
             try {
                 this.detalhesVisiveis = true;
                 this.loading = true;
                 this.progressPercent = 5;
 
-                const response = await axios.get('/api/detalhes-pedido', {
+                const response = await axios.get('/primeapi/detalhes-pedido', {
                     params: {
                         filtro_cliente: nota.a1_cod,
                         filtro_loja: nota.a1_loja,
@@ -340,22 +402,22 @@ export default {
             // Oculta o botão "Agendar esta entrega" quando os campos são mostrados
             nota.agendamentoConfirmado = false;
         },
-        confirmarAgendamento(nota) {
-            // Adicione aqui a lógica para confirmar o agendamento para a nota específica
-            // Utilize this.dataAgendamento e this.horaAgendamento para obter os valores
-            console.log('Agendamento confirmado para:', nota);
-            console.log('Data de Agendamento:', this.dataAgendamento);
-            console.log('Hora de Agendamento:', this.horaAgendamento);
+        // confirmarAgendamento(nota) {
+        //     // Adicione aqui a lógica para confirmar o agendamento para a nota específica
+        //     // Utilize this.dataAgendamento e this.horaAgendamento para obter os valores
+        //     console.log('Agendamento confirmado para:', nota);
+        //     console.log('Data de Agendamento:', this.dataAgendamento);
+        //     console.log('Hora de Agendamento:', this.horaAgendamento);
 
-            // Você pode querer reiniciar os campos de data e hora após o agendamento
-            this.dataAgendamento = '';
-            this.horaAgendamento = '';
+        //     // Você pode querer reiniciar os campos de data e hora após o agendamento
+        //     this.dataAgendamento = '';
+        //     this.horaAgendamento = '';
 
-            // Exibe o botão "Agendar esta entrega" após o agendamento
-            nota.agendamentoConfirmado = true;
-            // Opcional: Oculta os campos de data e hora após o agendamento
-            nota.mostrarCamposDataHora = false;
-        },
+        //     // Exibe o botão "Agendar esta entrega" após o agendamento
+        //     nota.agendamentoConfirmado = true;
+        //     // Opcional: Oculta os campos de data e hora após o agendamento
+        //     nota.mostrarCamposDataHora = false;
+        // },
         fecharLinha(nota) {
             // Ao clicar no botão de fechar, reverter a linha para o estado normal
             nota.mostrarCamposDataHora = false;

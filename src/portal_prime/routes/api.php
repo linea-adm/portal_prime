@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Http\Controllers;
 use App\Http\Controllers\SendLoginLinkController;
 use App\Http\Controllers\ApiController;
+use Illuminate\Support\Facades\Http;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,17 @@ Route::get('/notas-nao-agendadas', function (Request $request) {
 
     return response()->json($response->json());
 });
+
+Route::get('/notas-nao-agendadas-filtradas', function (Request $request) {
+    $token = env('SERVICE_GOBI_TOKEN');
+    $baseUrl = rtrim(env('SERVICE_GOBI_URL_NOTAS_PARA_AGENDAMENTO_FILTRADAS'), '&');
+    $url = $baseUrl . '&filtro_cliente=' . $request->filtro_cliente. 'filtro_loja=' . $request->filtro_cliente.'filtro_notas='.$request->filtro_notas;
+
+    $response = Http::withToken($token)->get($url);
+
+    return response()->json($response->json());
+});
+
 
 
 

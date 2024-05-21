@@ -19,6 +19,9 @@ use App\Http\Controllers\NotaController;
 Route::get('/', function () {
     return view('agendamento');
 });
+Route::get('/prime', function () {
+    return view('agendamento');
+});
 
 Route::get('/phpinfo', function () {
     return phpinfo();
