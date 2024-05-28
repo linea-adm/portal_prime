@@ -47,7 +47,7 @@ class AgendamentoController extends Controller
             // ->delete();
 
             // Decodificar o parâmetro 'notas' da URL
-            $notasParam = $request->query('notas');
+            $notasParam = $request->query('aNotas');
             $notasFiltradasIds = json_decode($notasParam, true);
             // Redirecionar para a página de agendamento com os dados do token
             return redirect('/programar-entregas')->with([

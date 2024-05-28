@@ -15,33 +15,41 @@ class SendLoginLinkController extends Controller
         try {
         // dados recebidos do ERP
         $email = $request->input('email');
+        $email_usuario = $request->input('email_usuario');
         $codCliente = $request->input('cod_cliente');
         $codLoja = $request->input('cod_loja');
         $notas = $request->input('notas'); // Lista de notas recebidas do ERP
 
+$notas_encoded = urlencode(json_encode($notas));
         // busca cliente na base
         $cliente = Cliente::where('codigo', $codCliente)
                           ->where('loja', $codLoja)
-                          ->where('email', 'LIKE', "%$email%")
+                          // ->where('email', 'LIKE', "%$email%")
                           ->first();
-
+          // dd($email);
         // gerar token e salvar
         $token = $this->gerarToken($cliente, $email);
 
         // montar URL de redirecionamento
         // $url = "/agendamento?token=$token";
-        $url = "/agendamento?token=$token&notas=" . urlencode(json_encode($notas));
+        // $url = "/agendamento?token=".$token.'&email_usuario='.$email_usuario."&notas=" . urlencode(json_encode($notas));
 
 
-        // retornar dados de resposta
-        return [
-              'login_url' => $url
-        ];
+        // Montar URL de redirecionamento
+        $url = "/agendamento?token=" . urlencode($token) . '&email_usuario=' . urlencode($email_usuario) . "&aNotas=" .$notas_encoded;
+
+
+        // Retornar dados de resposta
+        $response = [
+          'login_url' => $url
+      ];
+
+      return response()->json($response, 200, [], JSON_UNESCAPED_SLASHES);
 
           } catch (\Exception $e) {
-
+            return $e->getMessage();
             // retornar erro 500
-            return response()->json(['error' => 'Falha ao gerar link de login'], 500);
+            return response()->json(['error' => 'Falha ao gerar link de login','message' => $e->getMessage()], 500);
 
           }
       }
