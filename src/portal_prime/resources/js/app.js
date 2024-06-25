@@ -9,17 +9,26 @@
 
 import { createApp } from 'vue';
 import Agendamento from './components/Agendamento.vue';
+import Agendartodas from './components/Agendartodas.vue';
 /**
  * Next, we will create a fresh Vue application instance. You may then begin
  * registering components with the application instance so they are ready
  * to use in your application's views. An example is included for you.
  */
 
-const app = createApp({
-    components:{
-        Agendamento
-    }
-});
+// const app = createApp({
+//     components:{
+//         Agendamento, Agendartodas
+//     }
+// });
+
+
+const app = createApp({});
+
+// Register components globally
+app.component('Agendamento', Agendamento);
+app.component('Agendartodas', Agendartodas);
+
 
 // app.component('example-component', ExampleComponent);
 

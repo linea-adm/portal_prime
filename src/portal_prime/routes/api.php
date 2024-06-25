@@ -10,6 +10,10 @@ use App\Http\Controllers\SendLoginLinkController;
 use App\Http\Controllers\ApiController;
 use Illuminate\Support\Facades\Http;
 
+use App\Http\Controllers\EmailClienteController;
+use App\Mail\AgendamentoMail;
+use Illuminate\Support\Facades\Mail;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -65,7 +69,27 @@ Route::get('/notas-nao-agendadas-filtradas', function (Request $request) {
     return response()->json($response->json());
 });
 
-
-
+Route::post('/emails/create', [EmailClienteController::class, 'create']);
 
 Route::get('/detalhes-pedido', [ApiController::class, 'buscarDetalhesPedido']);
+
+// Rota para enviar confirmação de agendamento via e-mail
+Route::post('/enviar-confirmacao-agendamento', function (Request $request) {
+    $detalhes = [
+        'data' => $request->input('data'),
+        'hora' => $request->input('hora'),
+        'notas' => $request->input('notas')
+    ];
+
+    $emailCliente = $request->input('emailCliente');
+    $emailLogistica = env('LOGISTICA_EMAIL');
+
+    Mail::to($emailCliente)->send(new AgendamentoMail($detalhes));
+    Mail::to($emailLogistica)->send(new AgendamentoMail($detalhes));
+
+    return response()->json(['message' => 'E-mails de confirmação enviados com sucesso.']);
+});
+
+Route::get('/logistica-email', function () {
+    return response()->json(['email' => env('LOGISTICA_EMAIL')]);
+});

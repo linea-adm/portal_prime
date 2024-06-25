@@ -44,6 +44,10 @@ return [
             'driver' => 'session',
             'provider' => 'clientes',
         ],
+        'email_clientes' => [
+            'driver' => 'session',
+            'provider' => 'email_clientes',
+        ],
     ],
 
     /*
@@ -73,6 +77,10 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\Cliente::class,
             // 'key' => 'id',
+        ],
+        'email_clientes' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\EmailCliente::class,
         ],
         // 'users' => [
         //     'driver' => 'database',

@@ -19,5 +19,3 @@ yarn-error.log
 /.vscode
 package-lock.json
 
-# Ignorar configurações específicas do projeto
-settings/000-default.conf

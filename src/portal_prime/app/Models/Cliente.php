@@ -1,5 +1,4 @@
 <?php
-// app/Models/Cliente.php
 
 namespace App\Models;
 
@@ -48,4 +47,8 @@ class Cliente  extends Authenticatable
         'desc_grupo',
         'dt_cadastro',
     ];
+    public function emails()
+    {
+        return $this->hasMany(EmailCliente::class);
+    }
 }

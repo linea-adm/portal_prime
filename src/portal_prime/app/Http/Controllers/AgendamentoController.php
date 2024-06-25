@@ -10,6 +10,8 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 class AgendamentoController extends Controller
@@ -98,5 +100,108 @@ class AgendamentoController extends Controller
         // dd($dadosNotasFiscais);
         return view('agendamento', compact('dadosCliente','dadosNotasFiscais'));
     }
+
+    public function programarEntregasAbertas()
+    {
+
+        $usuario = Auth::guard('email_clientes')->user();
+        // Recuperar dados passados do método index
+        // $cnpj = session('cnpj');
+        // $email = session('email');
+        // $codigoCliente = session('codigoCliente');
+        // $loja = session('loja');
+
+
+        $cliente = Cliente::where('id', $usuario->cliente_id)->first();
+        if (!$cliente) $cliente = Cliente::where('id', 1)->first();
+
+        // Dados do cliente
+        $dadosCliente = [
+            'nomeFantasia' => $cliente->fantasia,
+            'municipioEstado' => $cliente->municipio . '-' . $cliente->uf,
+            'cnpj' => $cliente->cnpj,
+            'codigoCliente' => $cliente->codigo,
+            'loja' => $cliente->loja,
+            'email' => $usuario->email,
+        ];
+
+        // Buscar todas as notas fiscais sem agendamento
+        $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja);
+        $logout = route('email_clientes.logout');
+
+        return view('agendartodas', compact('dadosCliente', 'dadosNotasFiscais', 'logout'));
+    }
+
+    public function confirmarAgendamento(Request $request)
+    {
+        $usuario = Auth::guard('email_clientes')->user();
+        $cliente = Cliente::where('id', $usuario->cliente_id)->first();
+        if (!$cliente) $cliente = Cliente::where('id', 1)->first();
+
+        $dadosCliente = [
+            'nomeFantasia' => $cliente->fantasia,
+            'municipioEstado' => $cliente->municipio . '-' . $cliente->uf,
+            'cnpj' => $cliente->cnpj,
+            'codigoCliente' => $cliente->codigo,
+            'loja' => $cliente->loja,
+            'email' => $usuario->email,
+        ];
+
+        $notasSelecionadas = $request->input('notasSelecionadas');
+        $dataAgendamento = $request->input('dataAgendamento');
+        $horaAgendamento = $request->input('horaAgendamento');
+
+        return view('confirmar_agendamento', compact('dadosCliente', 'notasSelecionadas', 'dataAgendamento', 'horaAgendamento'));
+    }
+
+    public function finalizarAgendamento(Request $request)
+    {
+        $usuario = Auth::guard('email_clientes')->user();
+        $cliente = Cliente::where('id', $usuario->cliente_id)->first();
+        if (!$cliente) $cliente = Cliente::where('id', 1)->first();
+
+        $notasSelecionadas = $request->input('notasSelecionadas');
+        $dataAgendamento = $request->input('dataAgendamento');
+        $horaAgendamento = $request->input('horaAgendamento');
+
+        $dadosAgendamento = [];
+        foreach ($notasSelecionadas as $nota) {
+            $dadosAgendamento[] = [
+                "filial" => $nota['f2_filial'],
+                "dt_agendamento" => $dataAgendamento,
+                "hr_agendamento" => $horaAgendamento,
+                "tipo" => "102",
+                "cliente" => $nota['a1_cod'],
+                "chave_nfe" => $nota['f2_chvnfe']
+            ];
+        }
+
+        // Enviar e-mails
+        $emailCliente = $cliente->email;
+        $emailLogistica = 'logistica@lineaalimentos.com.br';
+
+        Mail::send('emails.agendamento_cliente', compact('dadosCliente', 'notasSelecionadas', 'dataAgendamento', 'horaAgendamento'), function($message) use ($emailCliente) {
+            $message->to($emailCliente)
+                ->subject('Confirmação de Agendamento de Entrega');
+        });
+
+        Mail::send('emails.agendamento_logistica', compact('dadosCliente', 'notasSelecionadas', 'dataAgendamento', 'horaAgendamento'), function($message) use ($emailLogistica) {
+            $message->to($emailLogistica)
+                ->subject('Nova Solicitação de Agendamento de Entrega');
+        });
+
+        // Enviar dados ao Protheus via REST
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Basic ' . base64_encode(env('PROTHEUS_USERNAME') . ':' . env('PROTHEUS_PASSWORD'))
+        ])->post('http://www.erplineaalimentos.com.br:8191/rest/AgendarEntrega/agendamento', $dadosAgendamento);
+
+        if ($response->successful()) {
+            return redirect()->route('agendamento.sucesso');
+        } else {
+            return redirect()->route('agendamento.erro');
+        }
+    }
+
 
 }
