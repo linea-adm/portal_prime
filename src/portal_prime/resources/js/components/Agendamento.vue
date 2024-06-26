@@ -7,7 +7,7 @@
                 <h2 class="text-2xl font-semibold mb-2">Cliente: {{ dadosCliente.nomeFantasia }}</h2>
                 <p><strong>Município-UF:</strong> {{ dadosCliente.municipioEstado }}</p>
                 <p><strong>CNPJ:</strong> {{ dadosCliente.cnpj }}</p>
-                <p><strong>E-mail:</strong> {{ dadosCliente.email }}</p>
+                <p><strong>E-mail:</strong> {{ dadosCliente.email_cliente }}</p>
             </div>
 
             <!-- Botões de Ação -->
@@ -320,7 +320,7 @@ export default {
                     c5_num: nota.c5_num,
                     f2_transp: nota.f2_transp
                 })),
-                emailCliente: this.dadosCliente.email
+                emailCliente: this.dadosCliente.email_cliente
             };
 
             axios.post('/primeapi/enviar-confirmacao-agendamento', emailDados)

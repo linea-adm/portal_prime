@@ -20,7 +20,7 @@ class SendLoginLinkController extends Controller
         $codLoja = $request->input('cod_loja');
         $notas = $request->input('notas'); // Lista de notas recebidas do ERP
 
-$notas_encoded = urlencode(json_encode($notas));
+        $notas_encoded = urlencode(json_encode($notas));
         // busca cliente na base
         $cliente = Cliente::where('codigo', $codCliente)
                           ->where('loja', $codLoja)

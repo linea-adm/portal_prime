@@ -44,17 +44,19 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::post('/cliente-jwt', [JwtClienteController::class, 'generateToken']);
 
 // Rota para exibição da página de agendamento
-Route::get('/agendamento', [AgendamentoController::class, 'index'])->middleware('verifyTokenUsage');
-
+Route::middleware(['verifyTokenUsage'])->group(function () {
+    Route::get('/agendamento', [AgendamentoController::class, 'index'])->name('agendamento');
+});
 // Rotas para login de clientes via e-mail
 Route::middleware(['guest:email_clientes'])->group(function () {
     Route::get('/cliente/login', [EmailClienteLoginController::class, 'showLoginForm'])->name('email_clientes.login');
     Route::post('/cliente/login', [EmailClienteLoginController::class, 'login'])->name('email_clientes.login.submit');
 });
 
+
+Route::get('/programar-entregas', [AgendamentoController::class,'programarEntregas'])->name('programarEntregas');
 // Rotas para usuários autenticados (clientes)
 Route::middleware(['auth.cliente'])->group(function () {
-    Route::get('/programar-entregas', [AgendamentoController::class,'programarEntregas'])->name('programarEntregas');
     Route::get('/programar-entregas-abertas', [AgendamentoController::class,'programarEntregasAbertas'])->name('programarEntregasAbertas');
 
     // Rota de teste para clientes autenticados

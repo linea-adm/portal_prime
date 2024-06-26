@@ -29,17 +29,25 @@ class AgendamentoController extends Controller
                 // Token inválido, erro de autenticação
                 return response()->json(['error' => 'Token inválido'], 401);
             }
-
             // Decodificar o token JWT
             $decodedToken = JWT::decode($token, new Key(env('JWT_KEY'), 'HS256'));
             // $cliente = Cliente::where('id',$decodedToken->sub)->first();
             // Fazer login do cliente (sessão) com dados decodificados do JWT
             // Auth::guard('cliente')->login($cliente);
             Auth::guard('cliente')->loginUsingId(trim($decodedToken->sub));
-            // $usuario=Auth::guard('cliente')->user();
+            $usuario=Auth::guard('cliente')->user();
+            
+// dd($decodedToken);
+
+
+
             // Recuperar dados do token
             $cnpj = $decodedToken->cnpj;
-            $email = $decodedToken->email;
+
+            //E-mail do usuário que solicitou agendamento
+            $email = $request->query('email_usuario');
+            // dd($request);
+            $email_cliente = $decodedToken->email;
             $codigoCliente = $decodedToken->codigo;
             $loja = $decodedToken->loja;
 
@@ -48,6 +56,7 @@ class AgendamentoController extends Controller
             // ->where('token', $passwordReset->token)
             // ->delete();
 
+            
             // Decodificar o parâmetro 'notas' da URL
             $notasParam = $request->query('aNotas');
             $notasFiltradasIds = json_decode($notasParam, true);
@@ -57,7 +66,8 @@ class AgendamentoController extends Controller
                 'email' => $email,
                 'codigoCliente' => $codigoCliente,
                 'loja' => $loja,
-                'notas' =>$notasFiltradasIds
+                'notas' =>$notasFiltradasIds,
+                'email_cliente' => isset($email_cliente) ? $email_cliente : ''
             ]);
 
         } catch (\Exception $e) {
@@ -68,12 +78,15 @@ class AgendamentoController extends Controller
 
     public function programarEntregas()
     {
+
         // Recuperar dados passados do método index
         $cnpj = session('cnpj');
         $email = session('email');
         $codigoCliente = session('codigoCliente');
         $loja = session('loja');
+        $email_cliente = session('email_cliente');
 
+        $usuario = Auth::guard('cliente')->user();
         $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', $codigoCliente)->where('loja', $loja)->first();
         // $cliente = Cliente::where('cnpj', $cnpj)->where('codigo', '000003')->where('loja', '03')->first();
         if(!$cliente) $cliente=Cliente::where('id',1)->first();
@@ -84,7 +97,8 @@ class AgendamentoController extends Controller
             'cnpj' => $cliente->cnpj,
             'codigoCliente' => $codigoCliente,
             'loja' => $loja,
-            'email' => $email, // Usando o e-mail da sessão, pois não está claro de onde ele vem
+            'email' => $email, 
+            'email_cliente' =>$email_cliente
         ];
         
       
@@ -92,25 +106,22 @@ class AgendamentoController extends Controller
 
         // $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas( '000003', '04');
         // $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja);
-        if(!empty($notasFiltradasIds))
+        if(!empty($notasFiltradasIds)){
             $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja, $notasFiltradasIds);
-        else
+        }
+            else
             $dadosNotasFiscais = ApiHelper::buscarNotasNaoAgendadas($cliente->codigo, $cliente->loja);
-
         // dd($dadosNotasFiscais);
-        return view('agendamento', compact('dadosCliente','dadosNotasFiscais'));
+        $logout = route('email_clientes.logout');
+
+        
+        return view('agendamento', compact('dadosCliente','dadosNotasFiscais','logout'));
     }
 
     public function programarEntregasAbertas()
     {
 
         $usuario = Auth::guard('email_clientes')->user();
-        // Recuperar dados passados do método index
-        // $cnpj = session('cnpj');
-        // $email = session('email');
-        // $codigoCliente = session('codigoCliente');
-        // $loja = session('loja');
-
 
         $cliente = Cliente::where('id', $usuario->cliente_id)->first();
         if (!$cliente) $cliente = Cliente::where('id', 1)->first();
@@ -122,7 +133,7 @@ class AgendamentoController extends Controller
             'cnpj' => $cliente->cnpj,
             'codigoCliente' => $cliente->codigo,
             'loja' => $cliente->loja,
-            'email' => $usuario->email,
+            'email' => $usuario->email, //E-mail do cliente
         ];
 
         // Buscar todas as notas fiscais sem agendamento

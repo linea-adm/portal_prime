@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Programação de Entregas - Linea Alimentos</title>
 
     <!-- Fonts -->
@@ -184,8 +185,8 @@
         <div id="preloader" class="flex items-center justify-center h-screen">
             <div class="loader"></div>
         </div>
-        <agendamento :dados-cliente='@json($dadosCliente)' :dados-notas-fiscais='@json($dadosNotasFiscais)'>
-        </agendamento>
+        
+        <agendamento :dados-cliente='@json($dadosCliente)' :dados-notas-fiscais='@json($dadosNotasFiscais)'  logout-url="{{ $logout }}"></agendamento>
     </div>
 
     <!-- Rodapé com Copyright -->
