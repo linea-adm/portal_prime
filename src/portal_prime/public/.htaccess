@@ -5,6 +5,14 @@
 
     RewriteEngine On
 
+    # Excluir a rota /agendar-entrega do Laravel
+    RewriteCond %{REQUEST_URI} ^/agendar-entrega-teste
+    RewriteRule ^ - [L]
+    
+    # Excluir a rota /agendar-entrega do Laravel
+    RewriteCond %{REQUEST_URI} ^/agendar-entrega
+    RewriteRule ^ - [L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

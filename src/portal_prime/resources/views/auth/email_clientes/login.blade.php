@@ -83,7 +83,28 @@
                 width: 90%;
             }
         }
-    </style>
+    
+    .titulo-agendamento {
+        background-color:#425789; /* Fundo transparente */
+        border-bottom-left-radius: 0.9rem; /* Cantos inferiores arredondados */
+        border-bottom-right-radius: 0.9rem; /* Cantos inferiores arredondados */
+        color: white; /* Cor branca */
+        padding: 0.5rem; /* Adicione um pouco de padding para melhor visualização */
+        position: fixed; /* Fixo no topo */
+        top: 0; /* Posicionado no topo */
+        z-index: 1000; /* Garante que esteja acima de outros elementos */
+        text-align: center; /* Centraliza o texto */   
+        left: 50%; /* Posiciona a borda esquerda no meio da tela */
+        transform: translateX(-50%);
+        padding:15px;
+        /*opacity: 0.95; /* 60% de opacidade (1 - 0.6 = 0.4) */
+        padding-left: 40px;
+        padding-right: 40px;
+        font-weight: 350;
+    }
+
+</style>
+
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
@@ -96,7 +117,7 @@
         <div class="flex items-center justify-between">
             {{-- <img src="{{ asset('/images/logo_linea.png') }}" alt="Logo" class="h-6" height="40"> --}}
             <div class="h-6" height="40">&nbsp;</div>
-            <h1 class="text-2xl font-bold header-text">Agendamento de Entregas - Linea Alimentos</h1>
+            <h1 class="text-2xl font-bold header-text titulo-agendamento shadow-lg">Agendamento de Entregas</h1>
             <div></div>
         </div>
     </div>

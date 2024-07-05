@@ -23,6 +23,9 @@ class AppServiceProvider extends AuthServiceProvider
      */
     public function boot()
     {
+        
+        //  Comentar essa linha no ambiente de desenvolvimento
+        \Illuminate\Support\Facades\URL::forceScheme('https');
         $this->registerPolicies();
 
         // Defina suas políticas e gates, se necessário

@@ -59,7 +59,7 @@
             <tbody>
                 <tr v-for="(nota, index) in notasFiltradasPaginadas" :key="nota.f2_doc" :class="[index % 2 === 0 ? 'bg-gray-50' : 'bg-white', 'transition-colors', 'ease-in-out', 'duration-300', 'hover:bg-gray-200']">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <input type="checkbox" v-model="nota.agendar" class="form-checkbox h-5 w-5 text-blue-500" :disabled="!modoSelecao">
+                        <input type="checkbox" v-model="nota.agendar" class="form-checkbox h-5 w-5 text-blue-500" :disabled="!modoSelecao || nota.agendamentoConfirmado">
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div v-if="nota.loading" class="flex items-center justify-center">
@@ -73,9 +73,12 @@
                     <td class="px-6 py-4 whitespace-nowrap">{{ nota.c5_num }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">{{ nota.f2_transp }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <button @click="mostrarCamposDataHora(nota)" class="px-4 py-2 text-white rounded-md font-bold" :class="{'bg-gray-500': modoSelecao, 'bg-blue-500 hover:bg-blue-700': !modoSelecao}" :disabled="modoSelecao">
+                        <button v-if="!nota.agendamentoConfirmado" @click="mostrarCamposDataHora(nota)" class="px-4 py-2 text-white rounded-md font-bold" :class="{'bg-gray-500': modoSelecao, 'bg-blue-500 hover:bg-blue-700': !modoSelecao}" :disabled="modoSelecao">
                             <i class="fas fa-clock"></i> Agendar esta entrega
                         </button>
+                        <span v-else class="px-4 py-2 bg-green-500 text-white rounded-md font-bold">
+                            <i class="fas fa-check"></i> Agendada
+                        </span>
                         <div v-if="nota.mostrarCamposDataHora" class="mt-2">
                             <input type="date" v-model="nota.dataAgendamento" class="border rounded-md p-1 mr-2">
                             <input type="time" v-model="nota.horaAgendamento" class="border rounded-md p-1">
@@ -183,8 +186,7 @@ export default {
     data() {
         return {
             emailLogistica: '',
-            username: 'magno.borges',
-            password: 'Eic@ti0100',
+            tsk: 'YWdlbmRhbWVudG8ucHJpbWU6RWljYnJhc2lsJSQjQCEyazI0',
             selecionarTodas: false,
             notasFiscais: [],
             detalhesVisiveis: false,
@@ -248,7 +250,6 @@ export default {
         },
     },
     methods: {
-        // Busca o e-mail da logística do backend
         async obterEmailLogistica() {
             try {
                 const response = await axios.get('/primeapi/logistica-email');
@@ -265,7 +266,6 @@ export default {
             }
             this.notasParaConfirmar = notas.length > 0 ? notas : this.notasFiscais.filter(nota => nota.agendar);
 
-            // Adiciona a data e hora de agendamento para cada nota selecionada
             if (this.modoSelecao) {
                 this.notasParaConfirmar.forEach(nota => {
                     nota.dataAgendamento = this.dataAgendamento;
@@ -289,12 +289,16 @@ export default {
                     chave_nfe: nota.f2_chvnfe,
                 }));
 
-                const authHeader = 'Basic ' + btoa(this.username + ':' + this.password);
+                const authHeader = 'Basic ' + this.tsk;
                 const headers = { 'Authorization': authHeader };
-                await axios.post('http://www.erplineaalimentos.com.br:8191/rest/AgendarEntrega/agendamento', agendamentoDados, { headers });
+                await axios.post('https://agendamento.lineaalimentos.com.br/agendar-entrega-teste', agendamentoDados, { headers });
 
                 this.mostrarSucesso = true;
                 this.mensagemSucesso = "Agendamento realizado com sucesso.";
+                this.notasParaConfirmar.forEach(nota => {
+                    nota.agendamentoConfirmado = true;
+                    nota.mostrarCamposDataHora = false;
+                });
                 this.enviarEmailConfirmacao();
                 this.fecharModalConfirmacao();
             } catch (error) {
@@ -302,14 +306,12 @@ export default {
                 this.mensagemErro = "Erro ao agendar a entrega: " + error.message;
             }
         },
-        // Envia um e-mail para o cliente e para a logística
         enviarEmail() {
             const email = this.emailLogistica;
             const subject = 'Contato do Cliente';
             const emailBody = 'Olá, gostaria de obter mais informações sobre o agendamento.';
             document.location = `mailto:${email}?subject=${subject}&body=${emailBody}`;
         },
-        // Envia um e-mail de confirmação para o cliente e para a logística
         enviarEmailConfirmacao() {
             const emailDados = {
                 data: this.formatarDataParaVisualizacao(this.notasParaConfirmar[0]?.dataAgendamento) || this.formatarDataParaVisualizacao(this.dataAgendamento),
@@ -371,9 +373,8 @@ export default {
                 this.mensagemErro = 'Preencha a data e a hora de agendamento.';
                 return;
             }
-            const notasSelecionadas = this.notasFiscais.filter(nota => nota.agendar);
+            const notasSelecionadas = this.notasFiscais.filter(nota => nota.agendar && !nota.agendamentoConfirmado);
 
-            // Adiciona a data e hora de agendamento para cada nota selecionada
             notasSelecionadas.forEach(nota => {
                 nota.dataAgendamento = this.dataAgendamento;
                 nota.horaAgendamento = this.horaAgendamento;
@@ -402,7 +403,9 @@ export default {
         },
         marcarCheckbox(nota) {
             if (this.modoSelecao) {
-                nota.agendar = !nota.agendar;
+                if (!nota.agendamentoConfirmado) {
+                    nota.agendar = !nota.agendar;
+                }
             }
         },
         mostrarCamposDataHora(nota) {
@@ -417,15 +420,26 @@ export default {
         },
         selecionarTodasNotas() {
             if (this.modoSelecao) {
-                this.todasNotasSelecionadas = !this.todasNotasSelecionadas;
+                this.notasFiscais.forEach(nota => {
+                    if (!nota.agendamentoConfirmado) {
+                        nota.agendar = this.todasNotasSelecionadas;
+                    }
+                });
             }
         },
         toggleModoSelecao() {
             this.modoSelecao = !this.modoSelecao;
-            this.notasFiscais.forEach(nota => {
-                nota.agendar = false;
-                nota.mostrarCamposDataHora = false;
-            });
+            if (!this.modoSelecao) {
+                this.notasFiscais.forEach(nota => {
+                    nota.agendar = false;
+                });
+            } else {
+                this.notasFiscais.forEach(nota => {
+                    if (nota.agendamentoConfirmado) {
+                        nota.agendar = false;
+                    }
+                });
+            }
         },
         ocultarPreloader() {
             const preloader = document.getElementById('preloader');

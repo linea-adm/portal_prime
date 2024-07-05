@@ -15,7 +15,10 @@
     <!-- Styles -->
     @vite(['resources/sass/app.scss'])
     @vite(['resources/js/app.js'])
-
+    
+    <script>
+    </script>
+    
     <style>
         .header-bg {
             background-color: #000;

@@ -93,3 +93,6 @@ Route::post('/enviar-confirmacao-agendamento', function (Request $request) {
 Route::get('/logistica-email', function () {
     return response()->json(['email' => env('LOGISTICA_EMAIL')]);
 });
+
+
+// Route::middleware('auth:api')->post('/agendar-entrega', [ApiController::class, 'agendarEntrega']);
